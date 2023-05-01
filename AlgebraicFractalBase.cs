@@ -17,7 +17,13 @@ namespace AlgebraicFractals
             TopLeft = topLeftCoord;
             BottomRight = bottomRightCoord;
         }
-
+        /// <summary>
+        /// Must return iterations count from input coord x, y
+        /// </summary>
+        /// <param name="x">X point coord</param>
+        /// <param name="y">Y point coord</param>
+        /// <param name="MaxIterations"> Max iterations amount on current iterations</param>
+        /// <returns> iteration count</returns>
         public abstract int FractalEquasion(double x, double y, double MaxIterations);
 
         public void CreateFractalSimple(int[] image, int imageWidth,
