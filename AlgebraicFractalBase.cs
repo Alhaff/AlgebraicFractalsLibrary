@@ -20,7 +20,8 @@ namespace AlgebraicFractals
 
         public abstract int FractalEquasion(double x, double y, double MaxIterations);
 
-        public void CreateFractalSimple(int[] image, int imageWidth, Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
+        public void CreateFractalSimple(int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             double xScale = (BottomRight.X - TopLeft.X) / (imageBottomRight.X - imageTopLeft.X);
             double yScale = (BottomRight.Y - TopLeft.Y) / (imageBottomRight.Y - imageTopLeft.Y);
@@ -29,10 +30,9 @@ namespace AlgebraicFractals
             {
                 for (int x = imageTopLeft.X; x < imageBottomRight.X; x++)
                 {
-
-                    image[y * imageWidth + x] = FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations);
-            
-                 }
+                    image[y * imageWidth + x] = 
+                        FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations);
+                }
             }
         }
     }
