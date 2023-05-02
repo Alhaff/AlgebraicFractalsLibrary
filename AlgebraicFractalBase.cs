@@ -26,6 +26,14 @@ namespace AlgebraicFractals
         /// <returns> iteration count</returns>
         public abstract int FractalEquasion(double x, double y, double MaxIterations);
 
+        /// <summary>
+        /// Fill Image pixels with color value obtains after FractalEquasion
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="imageWidth"></param>
+        /// <param name="imageTopLeft"></param>
+        /// <param name="imageBottomRight"></param>
+        /// <param name="MaxIterations"></param>
         public void CreateFractalSimple(int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
@@ -36,11 +44,20 @@ namespace AlgebraicFractals
             {
                 for (int x = imageTopLeft.X; x < imageBottomRight.X; x++)
                 {
-                    image[y * imageWidth + x] = 
-                        FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations);
+                    image[y * imageWidth + x] = ColorINTFromIterationsAmount(
+                        FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations));
                 }
             }
         }
+
+        /// <summary>
+        /// Fill Image pixels with color value used AVX2
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="imageWidth"></param>
+        /// <param name="imageTopLeft"></param>
+        /// <param name="imageBottomRight"></param>
+        /// <param name="MaxIterations"></param>
         public abstract void CreateFractalIntrinsics(int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
         public static int ColorINTFromIterationsAmount(double n, double alpha = 0.1d)
