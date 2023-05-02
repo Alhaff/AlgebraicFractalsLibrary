@@ -47,7 +47,7 @@ namespace AlgebraicFractals
             double red = 0.5d * Math.Sin(alpha * n) + 0.5d;
             double green = 0.5d * Math.Sin(alpha * n + 2.094d) + 0.5d;
             double blue = 0.5d * Math.Sin(alpha * n + 4.188d) + 0.5d;
-            return (1 << 24) | ((int)red << 16) | ((int)green << 8) | ((int)blue);
+            return (255 << 24) | ((int)(red * 255) << 16) | ((int)(green * 255) << 8) | ((int)(blue * 255));
         }
     }
 }
