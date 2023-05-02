@@ -41,7 +41,8 @@ namespace AlgebraicFractals
                 }
             }
         }
-
+        public abstract void CreateFractalIntrinsics(int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
         public static int ColorINTFromIterationsAmount(double n, double alpha = 0.1d)
         {
             double red = 0.5d * Math.Sin(alpha * n) + 0.5d;
