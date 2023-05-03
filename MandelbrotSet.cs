@@ -72,10 +72,10 @@ namespace AlgebraicFractals
                             _n = Avx2.Add(_n, _c); // n++ Increase all n
                         } while (Avx2.MoveMask(Vector256.ConvertToDouble(_mask2)) > 0);
 
-                        image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
-                        image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
-                        image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
-                        image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
+                        if(yOffset + x < image.Length) image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
+                        if (yOffset + x +1 < image.Length) image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
+                        if (yOffset + x +2< image.Length) image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
+                        if (yOffset + x +3< image.Length) image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
                         _x_pos = Avx2.Add(_x_pos, _x_jump);
                     }
                     yPos += yScale;
