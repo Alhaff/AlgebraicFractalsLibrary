@@ -17,5 +17,42 @@ namespace AlgebraicFractals
         }
         public T X { get; init; }
         public T Y { get; init; }
+        #region Operators
+
+        #region Operator+
+        static public Coord<T> operator+(Coord<T> one, Coord<T> two) 
+            => new Coord<T>(one.X+two.X, one.Y+two.Y);
+        static public Coord<T> operator +(Coord<T> one, T two)
+            => new Coord<T>(one.X + two, one.Y + two);
+        static public Coord<T> operator +(T one, Coord<T> two)
+            => new Coord<T>(one + two.X, one + two.Y);
+        #endregion
+
+        #region Operator-
+        static public Coord<T> operator -(Coord<T> one, Coord<T> two)
+            => new Coord<T>(one.X - two.X, one.Y - two.Y);
+        static public Coord<T> operator -(Coord<T> one, T two)
+           => new Coord<T>(one.X - two, one.Y - two);
+        static public Coord<T> operator -(T one, Coord<T> two)
+            => new Coord<T>(one - two.X, one - two.Y);
+        #endregion
+
+        #region Operator*
+        static public Coord<T> operator *(Coord<T> one, Coord<T> two)
+            => new Coord<T>(one.X * two.X, one.Y * two.Y);
+        static public Coord<T> operator *(Coord<T> one, T two)
+            => new Coord<T>(one.X * two, one.Y * two);
+        static public Coord<T> operator *(T one, Coord<T> two)
+            => new Coord<T>(one * two.X, one * two.Y);
+        #endregion
+
+        #region Operator/
+        static public Coord<T> operator /(Coord<T> one, Coord<T> two)
+            => new Coord<T>(one.X / two.X, one.X / two.X);
+        static public Coord<T> operator /(Coord<T> one, T two)
+           => new Coord<T>(one.X / two, one.X / two);
+        #endregion
+
+        #endregion
     }
 }
