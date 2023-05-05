@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +30,8 @@ namespace AlgebraicFractals
         /// <param name="MaxIterations"> Max iterations amount on current iterations</param>
         /// <returns> iteration count</returns>
         public abstract int FractalEquasion(double x, double y, double MaxIterations);
+
+        public abstract Vector256<long> FractalInstrictEquasion(Vector256<double> x_pos, Vector256<double> y_pos, Vector256<long> maxIter);
 
         /// <summary>
         /// Fill Image pixels with color value obtains after FractalEquasion
@@ -61,8 +65,44 @@ namespace AlgebraicFractals
         /// <param name="imageTopLeft"></param>
         /// <param name="imageBottomRight"></param>
         /// <param name="MaxIterations"></param>
-        public abstract void CreateFractalIntrinsics(int[] image, int imageWidth,
-            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
+        public  void CreateFractalIntrinsics(int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
+        {
+            double xScale = (BottomRight.X - TopLeft.X) / (imageBottomRight.X - imageTopLeft.X);
+            double yScale = (BottomRight.Y - TopLeft.Y) / (imageBottomRight.Y - imageTopLeft.Y);
+            double yPos = TopLeft.Y;
+            int yOffset = 0;
+            int x, y;
+           
+                Vector256<double> _a, _y_pos;
+                Vector256<double> _x_pos_offsets, _x_pos, _x_scale, _x_jump;
+                Vector256<long> _n, _iterations;
+                _iterations = Vector256.Create((long)MaxIterations);
+                _x_scale = Vector256.Create(xScale);
+                _x_jump = Vector256.Create(xScale * 4);
+                _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
+                _x_pos_offsets = Avx2.Multiply(_x_pos_offsets, _x_scale);
+
+                for (y = imageTopLeft.Y; y < imageBottomRight.Y; y++)
+                {
+                    _a = Vector256.Create(TopLeft.X);
+                    _x_pos = Avx2.Add(_a, _x_pos_offsets);
+                    _y_pos = Vector256.Create(yPos);
+
+                    for (x = imageTopLeft.X; x < imageBottomRight.X; x += 4)
+                    {
+                        _n = FractalInstrictEquasion(_x_pos, _y_pos, _iterations);
+                        if (yOffset + x < image.Length) image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
+                        if (yOffset + x + 1 < image.Length) image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
+                        if (yOffset + x + 2 < image.Length) image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
+                        if (yOffset + x + 3 < image.Length) image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
+                        _x_pos = Avx2.Add(_x_pos, _x_jump);
+                    }
+                    yPos += yScale;
+                    yOffset += imageWidth;
+                }
+            
+        }
         #endregion
 
 
@@ -153,7 +193,50 @@ namespace AlgebraicFractals
                 e.WaitOne();
         }
 
-        protected abstract void CreateFractalIntrinsicsInTread(object context);
+        protected void CreateFractalIntrinsicsInTread(object context)
+        {
+            var ctx = context as FractalThreadContext;
+            double yPos = ctx.FractalTL.Y;
+            int yOffset = 0;
+            var imageTL = ctx.ImageTL;
+            var imageBR = ctx.ImageBR;
+            var fractalTL = ctx.FractalTL;
+            var fractalBR = ctx.FractalBR;
+            var image = ctx.Image;
+            var imageWidth = ctx.ImageWidth;
+            double xScale = (fractalBR.X - fractalTL.X) / (imageBR.X - imageTL.X);
+            double yScale = (fractalBR.Y - fractalTL.Y) / (imageBR.Y - imageTL.Y);
+            int x, y;
+            Vector256<double> _a, _b, _y_pos;
+            Vector256<double> _x_pos_offsets, _x_pos, _x_scale, _x_jump;
+            Vector256<long> _n, _iterations;
+
+            _iterations = Vector256.Create((long)ctx.MaxIter);
+            _x_scale = Vector256.Create(xScale);
+            _x_jump = Vector256.Create(xScale * 4);
+            _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
+            _x_pos_offsets = Avx2.Multiply(_x_pos_offsets, _x_scale);
+
+            for (y = imageTL.Y; y < imageBR.Y; y++)
+            {
+                _a = Vector256.Create(fractalTL.X);
+                _x_pos = Avx2.Add(_a, _x_pos_offsets);
+                _y_pos = Vector256.Create(yPos);
+                
+                for (x = imageTL.X; x < imageBR.X; x += 4)
+                {
+                    _n = FractalInstrictEquasion(_x_pos, _y_pos, _iterations);
+                    if (yOffset + x < image.Length) image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
+                    if (yOffset + x + 1 < image.Length) image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
+                    if (yOffset + x + 2 < image.Length) image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
+                    if (yOffset + x + 3 < image.Length) image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
+                    _x_pos = Avx2.Add(_x_pos, _x_jump);
+                 }
+                 yPos += yScale;
+                 yOffset += imageWidth;
+            }
+            ctx.DoneEvent.Set();
+        }
 
         public void CreateFractalIntrinsicsThreadPool(int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
@@ -185,10 +268,6 @@ namespace AlgebraicFractals
                 e.WaitOne();
         }
         #endregion
-
-
-
-
         #region Color
         public static int ColorINTFromIterationsAmount(double n, double alpha = 0.1d)
         {
