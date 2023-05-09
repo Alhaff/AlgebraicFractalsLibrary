@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace AlgebraicFractals
 {
-    public class JuliaSet : AlgebraicFractalBase
+    public class JuliaSet : AlgebraicFractal
     {
         public JuliaSet()
             : base(new Coord<double>(-2, -1.5), new Coord<double>(1, 1.5))

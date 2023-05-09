@@ -10,7 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace AlgebraicFractals
 {
-    public class MandelbrotSet : AlgebraicFractalBase
+    public class MandelbrotSet : AlgebraicFractal
     {
         public MandelbrotSet() : base(new Coord<double>(-2,-1), new Coord<double>(1,1))
         {
