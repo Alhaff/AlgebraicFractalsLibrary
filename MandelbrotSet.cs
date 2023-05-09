@@ -18,7 +18,7 @@ namespace AlgebraicFractals
         public override int FractalEquasion(double x, double y, double MaxIterations)
         {
             Complex C = new Complex(x,y);
-            Complex Z = new Complex(0,0);
+            Complex Z = new Complex(x,y);
             int n = 0;
             while (Z.Magnitude < 2.0 && n < MaxIterations)
             {
@@ -32,8 +32,8 @@ namespace AlgebraicFractals
         {
             var _cr = x_pos;
             var _ci = y_pos;
-            var _zr = Vector256.Create(0d);
-            var _zi = Vector256.Create(0d);
+            var _zr = x_pos;
+            var _zi = y_pos;
             var _n = Vector256.Create(0l);
             Vector256<double> _mask1, _a, _b, _zr2, _zi2;
             Vector256<long> _c, _mask2, ONE;
