@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace AlgebraicFractals
 {
-    public abstract class AlgebraicFractalBase
+    public abstract class AlgebraicFractal
     {
         public Coord<double> TopLeft { get; set; }
 
         public Coord<double> BottomRight { get; set; }
 
-        public AlgebraicFractalBase(Coord<double> topLeftCoord, Coord<double> bottomRightCoord)
+        public AlgebraicFractal(Coord<double> topLeftCoord, Coord<double> bottomRightCoord)
         {
             TopLeft = topLeftCoord;
             BottomRight = bottomRightCoord;
