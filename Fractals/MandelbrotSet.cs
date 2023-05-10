@@ -8,21 +8,21 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace AlgebraicFractals
+namespace AlgebraicFractals.Fractals
 {
     public class MandelbrotSet : AlgebraicFractal
     {
-        public MandelbrotSet() : base(new Coord<double>(-2,-1), new Coord<double>(1,1))
+        public MandelbrotSet() : base(new Coord<double>(-2, -1), new Coord<double>(1, 1))
         {
         }
         public override int FractalEquasion(double x, double y, double MaxIterations)
         {
-            Complex C = new Complex(x,y);
-            Complex Z = new Complex(x,y);
+            Complex C = new Complex(x, y);
+            Complex Z = new Complex(x, y);
             int n = 0;
             while (Z.Magnitude < 2.0 && n < MaxIterations)
             {
-                Z = (Z * Z) + C;
+                Z = Z * Z + C;
                 n++;
             }
             return n;
@@ -43,22 +43,22 @@ namespace AlgebraicFractals
             ONE = Vector256.Create(1l);
             do
             {
-                _zr2 = Avx2.Multiply(_zr, _zr);
-                _zi2 = Avx2.Multiply(_zi, _zi);
-                _a = Avx2.Subtract(_zr2, _zi2);
-                _a = Avx2.Add(_a, _cr);
-                _b = Avx2.Multiply(_zr, _zi);
-                _b = Avx2.Multiply(_b, TWO);
-                _b = Avx2.Add(_b, _ci);
+                _zr2 = Avx.Multiply(_zr, _zr);
+                _zi2 = Avx.Multiply(_zi, _zi);
+                _a = Avx.Subtract(_zr2, _zi2);
+                _a = Avx.Add(_a, _cr);
+                _b = Avx.Multiply(_zr, _zi);
+                _b = Avx.Multiply(_b, TWO);
+                _b = Avx.Add(_b, _ci);
                 _zr = _a;
                 _zi = _b;
-                _a = Avx2.Add(_zr2, _zi2);
-                _mask1 = Avx2.CompareLessThan(_a, FOUR);
+                _a = Avx.Add(_zr2, _zi2);
+                _mask1 = Avx.CompareLessThan(_a, FOUR);
                 _mask2 = Avx2.CompareGreaterThan(maxIter, _n);
                 _mask2 = Avx2.And(_mask2, _mask1.AsInt64());
                 _c = Avx2.And(ONE, _mask2); // Zero out ones where n < iterations													
                 _n = Avx2.Add(_n, _c); // n++ Increase all n
-            } while (Avx2.MoveMask(Vector256.ConvertToDouble(_mask2)) > 0);
+            } while (Avx.MoveMask(Vector256.ConvertToDouble(_mask2)) > 0);
             return _n;
         }
     }
