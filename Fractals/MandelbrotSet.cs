@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace AlgebraicFractals.Fractals
 {
@@ -45,14 +44,9 @@ namespace AlgebraicFractals.Fractals
             {
                 _zr2 = Avx.Multiply(_zr, _zr);
                 _zi2 = Avx.Multiply(_zi, _zi);
-                _a = Avx.Subtract(_zr2, _zi2);
-                _a = Avx.Add(_a, _cr);
-                _b = Avx.Multiply(_zr, _zi);
-                _b = Avx.Multiply(_b, TWO);
-                _b = Avx.Add(_b, _ci);
-                _zr = _a;
-                _zi = _b;
                 _a = Avx.Add(_zr2, _zi2);
+                (_zr, _zi) = IntrinsicsComplexMath.Multiply((_zr, _zi), (_zr, _zi));
+                (_zr, _zi) = IntrinsicsComplexMath.Add((_zr, _zi), (_cr, _ci));
                 _mask1 = Avx.CompareLessThan(_a, FOUR);
                 _mask2 = Avx2.CompareGreaterThan(maxIter, _n);
                 _mask2 = Avx2.And(_mask2, _mask1.AsInt64());
