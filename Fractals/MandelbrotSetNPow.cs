@@ -54,29 +54,11 @@ namespace AlgebraicFractals.Fractals
 
             do
             {
-                int i = 1;
-                var zrt = _zr;
-                var zit = _zi;
-
-                do
-                {
-                    i++;
-                    _zr2 = Avx.Multiply(_zr, zrt);
-                    _zi2 = Avx.Multiply(_zi, zit);
-                    _a = Avx.Subtract(_zr2, _zi2);
-                    _b = Avx.Multiply(_zr, zit);
-                    tmp = Avx.Multiply(_zi, zrt);
-                    _b = Avx.Add(_b, tmp);
-                    _zr = _a;
-                    _zi = _b;
-                } while (Power > i);
                 _zr2 = Avx.Multiply(_zr, _zr);
                 _zi2 = Avx.Multiply(_zi, _zi);
-                _a = Avx.Add(_a, _cr);
-                _b = Avx.Add(_b, _ci);
-                _zr = _a;
-                _zi = _b;
                 _a = Avx.Add(_zr2, _zi2);
+                (_zr, _zi) = IntrinsicsComplexMath.Pow((_zr, _zi), Power);
+                (_zr, _zi) = IntrinsicsComplexMath.Add((_zr, _zi), (_cr, _ci));
                 _mask1 = Avx.CompareLessThan(_a, FOUR);
                 _mask2 = Avx2.CompareGreaterThan(maxIter, _n);
                 _mask2 = Avx2.And(_mask2, _mask1.AsInt64());

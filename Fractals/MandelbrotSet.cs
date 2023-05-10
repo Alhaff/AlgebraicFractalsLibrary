@@ -34,7 +34,7 @@ namespace AlgebraicFractals.Fractals
             var _zr = x_pos;
             var _zi = y_pos;
             var _n = Vector256.Create(0l);
-            Vector256<double> _mask1, _a, _b, _zr2, _zi2;
+            Vector256<double> _mask1, _a, _zr2, _zi2;
             Vector256<long> _c, _mask2, ONE;
             Vector256<double> TWO, FOUR;
             TWO = Vector256.Create(2d);
