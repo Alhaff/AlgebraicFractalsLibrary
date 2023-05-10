@@ -70,6 +70,8 @@ namespace AlgebraicFractals
                     _zr = _a;
                     _zi = _b;
                 } while (Power > i);
+                _zr2 = Avx2.Multiply(_zr, _zr);
+                _zi2 = Avx2.Multiply(_zi, _zi);
                 _a = Avx2.Add(_a, _cr);
                 _b = Avx2.Add(_b, _ci);
                 _zr = _a;
