@@ -20,13 +20,6 @@ namespace AlgebraicFractals
             return (zr, zi);
         }
 
-        public static void Add(ref Vector256<double> z1R, ref Vector256<double> z1I, 
-                               ref Vector256<double> z2R, ref Vector256<double> z2I,
-                               out Vector256<double> zR, out Vector256<double> zI) 
-        { 
-           zR = Avx2.Add(z1R, z2R);
-           zI = Avx2.Add(z1I, z2I);
-        }
         public static (Vector256<double>, Vector256<double>) Subtract((Vector256<double>, Vector256<double>) z1,
                                                                              (Vector256<double>, Vector256<double>) z2)
         {
@@ -34,13 +27,7 @@ namespace AlgebraicFractals
             var zi = Avx2.Subtract(z1.Item2, z2.Item2);
             return (zr, zi);
         }
-        public static void Subtract(ref Vector256<double> z1R, ref Vector256<double> z1I,
-                                    ref Vector256<double> z2R, ref Vector256<double> z2I,
-                                    out Vector256<double> zR, out Vector256<double> zI)
-        {
-            zR = Avx2.Subtract(z1R, z2R);
-            zI = Avx2.Subtract(z1I, z2I);
-        }
+
         public static (Vector256<double>, Vector256<double>) Multiply((Vector256<double>, Vector256<double>) z1,
                                                                              (Vector256<double>, Vector256<double>) z2)
         {
@@ -51,18 +38,6 @@ namespace AlgebraicFractals
             tmp = Avx2.Multiply(z1.Item1, z2.Item2);
             zi = Avx2.Add(zi, tmp);
             return (zr, zi);
-        }
-        public static void Multiply(ref Vector256<double> z1R, ref Vector256<double> z1I,
-                                    ref Vector256<double> z2R, ref Vector256<double> z2I,
-                                    out Vector256<double> zR, out Vector256<double> zI)
-        {
-            var a = Avx2.Multiply(z1R, z2R);
-            var b = Avx2.Multiply(z1I, z2I);
-            var c = Avx2.Subtract(a, b);
-            a = Avx2.Multiply(z1I, z2R);
-            b = Avx2.Multiply(z1R, z2I);
-            zR = c;
-            zI = Avx2.Add(a, b);
         }
 
         public static (Vector256<double>, Vector256<double>) Divide((Vector256<double>, Vector256<double>) z1,
@@ -81,6 +56,7 @@ namespace AlgebraicFractals
             zi = Avx2.Divide(zi, denominator);
             return (zr, zi);
         }
+
         public static (Vector256<double>, Vector256<double>) Pow((Vector256<double>, Vector256<double>) z, int pow)
         {
             if (pow == 0) return (Vector256.Create(1d), Vector256<double>.Zero);
