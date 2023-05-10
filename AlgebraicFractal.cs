@@ -21,6 +21,8 @@ namespace AlgebraicFractals
             BottomRight = bottomRightCoord;
         }
 
+       
+
         #region BaseCreateFractal
         /// <summary>
         /// Must return iterations count from input coord x, y
@@ -104,7 +106,6 @@ namespace AlgebraicFractals
             
         }
         #endregion
-
 
         #region ThreadWork
 
@@ -268,6 +269,7 @@ namespace AlgebraicFractals
                 e.WaitOne();
         }
         #endregion
+
         #region Color
         public static int ColorINTFromIterationsAmount(double n, double alpha = 0.1d)
         {
