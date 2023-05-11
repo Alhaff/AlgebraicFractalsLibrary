@@ -6,6 +6,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace AlgebraicFractals
 {
@@ -59,6 +60,32 @@ namespace AlgebraicFractals
             }
         }
 
+        public static void CreateMultiFractalSimple(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
+        {
+            var xScale = algebraicFractals.Select(fractal => 
+                                        (fractal.BottomRight.X - fractal.TopLeft.X) / 
+                                        (imageBottomRight.X - imageTopLeft.X)
+                                                 ).ToArray();
+            var yScale = algebraicFractals.Select(fractal =>
+                                      (fractal.BottomRight.Y - fractal.TopLeft.Y) /
+                                      (imageBottomRight.Y - imageTopLeft.Y)
+                                               ).ToArray();
+            var n = new int[algebraicFractals.Length];
+            for (int y = imageTopLeft.Y; y < imageBottomRight.Y; y++)
+            {
+                for (int x = imageTopLeft.X; x < imageBottomRight.X; x++)
+                {
+                    for(int i = 0; i < algebraicFractals.Length;i++)
+                    {
+                        n[i] = algebraicFractals[i].FractalEquasion(x * xScale[i] + algebraicFractals[i].TopLeft.X,
+                                                                    y * yScale[i] + algebraicFractals[i].TopLeft.Y, MaxIterations);
+                    }
+                    image[y * imageWidth + x] = ColorINTFromIterationsAmount(n.Max());
+                }
+            }
+
+        }
         /// <summary>
         /// Fill Image pixels with color value used AVX2
         /// </summary>
@@ -105,6 +132,49 @@ namespace AlgebraicFractals
                 }
             
         }
+        public static void CreateMultiFractalIntrinsics(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+           Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
+        {
+            var xScale = algebraicFractals.Select(fractal =>
+                                       (fractal.BottomRight.X - fractal.TopLeft.X) /
+                                        (imageBottomRight.X - imageTopLeft.X)
+                                                 ).ToArray();
+            var yScale = algebraicFractals.Select(fractal =>
+                                      (fractal.BottomRight.Y - fractal.TopLeft.Y) /
+                                      (imageBottomRight.Y - imageTopLeft.Y)
+                                               ).ToArray();
+            var yPos = algebraicFractals.Select(fractal => fractal.TopLeft.Y).ToArray();
+            int yOffset = 0;
+            int x, y;
+            Vector256<double> _x_pos_offsets;
+            Vector256<long> _iterations;
+            _iterations = Vector256.Create((long)MaxIterations);
+            var _x_scale = xScale.Select(x => Vector256.Create(x)).ToArray();
+            var _x_jump = xScale.Select(x => Vector256.Create(x * 4)).ToArray();
+            _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
+            var _x_pos_offsetsArr = _x_scale.Select(x => Avx2.Multiply(_x_pos_offsets, x)).ToArray();
+            var n = new Vector256<long>[algebraicFractals.Length];
+            var _a = algebraicFractals.Select(f => Vector256.Create(f.TopLeft.X)).ToArray();
+            var _x_pos = new Vector256<double>[algebraicFractals.Length];
+            var _y_pos = new Vector256<double>[algebraicFractals.Length];
+            for (y = imageTopLeft.Y; y < imageBottomRight.Y; y++)
+            {
+                for(int i =0; i < _x_pos.Length; i++) _x_pos[i] = Avx2.Add(_a[i], _x_pos_offsetsArr[i]); 
+                _y_pos = yPos.Select(y => Vector256.Create(y)).ToArray();
+                for (x = imageTopLeft.X; x < imageBottomRight.X; x += 4)
+                {
+                    for (int i = 0; i < _x_pos.Length; i++) n[i] = algebraicFractals[i].FractalInstrictEquasion(_x_pos[i], _y_pos[i], _iterations);
+                    for(int i =0; i < 4; i++)
+                    {
+                        if (yOffset + x + i< image.Length)
+                            image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(n.Select(_n => _n.AsInt64()[i]).Max()));
+                    }
+                    for (int i = 0; i < _x_pos.Length; i++) _x_pos[i] = Avx2.Add(_x_pos[i], _x_jump[i]);
+                }
+                for (int i = 0; i < _x_pos.Length; i++) yPos[i] += yScale[i];
+                yOffset += imageWidth;
+            }
+        }
         #endregion
 
         #region ThreadWork
@@ -139,7 +209,75 @@ namespace AlgebraicFractals
             public double YScale { get; init; }
             public int MaxIter { get; init; }
             public ManualResetEvent DoneEvent { get; init; }
-        } 
+        }
+        public class FractalMultiTreadContext
+        {
+            public AlgebraicFractal[] Fractals { get; init; }
+            public int[] Image { get; init; }
+            public int ImageWidth { get; init; }
+            public double[] XScales { get; init; }
+            public double[] YScales { get; init; }
+            public Coord<int> ImageTL { get; init; }
+            public Coord<int> ImageBR { get; init; }
+            public int MaxIter { get; init; }
+            public ManualResetEvent DoneEvent { get; init; }
+            public FractalMultiTreadContext(
+                AlgebraicFractal[] fractals,
+                int[] image,
+                int imageWidth,
+                double[] xScales,
+                double[] yScales,
+                Coord<int> imageTL,
+                Coord<int> imageBR,
+                int maxIter,
+                ManualResetEvent done)
+            {
+                Fractals = fractals; 
+                Image = image;
+                ImageWidth = imageWidth;
+                XScales = xScales;
+                YScales = yScales;
+                ImageTL = imageTL;
+                ImageBR = imageBR;
+                MaxIter = maxIter;
+                DoneEvent = done;
+            }
+        }
+
+        public class FractalIntrinsincsMultiTreadContext
+        {
+            public FractalIntrinsincsMultiTreadContext(
+                AlgebraicFractal[] fractals,
+                int[] image,
+                int imageWidth,
+                Coord<double>[] fractalsTL,
+                Coord<double>[] fractalsBR,
+                Coord<int> imageTL,
+                Coord<int> imageBR,
+                int maxIter,
+                ManualResetEvent doneEvent)
+            {
+                Fractals = fractals;
+                Image = image;
+                ImageWidth = imageWidth;
+                FractalsTL = fractalsTL;
+                FractalsBR = fractalsBR;
+                ImageTL = imageTL;
+                ImageBR = imageBR;
+                MaxIter = maxIter;
+                DoneEvent = doneEvent;
+            }
+
+            public AlgebraicFractal[] Fractals { get; init; }
+            public int[] Image { get; init; }
+            public int ImageWidth { get; init; }
+            public Coord<double>[] FractalsTL { get; init; }
+            public Coord<double>[] FractalsBR { get; init; }
+            public Coord<int> ImageTL { get; init; }
+            public Coord<int> ImageBR { get; init; }
+            public int MaxIter { get; init; }
+            public ManualResetEvent DoneEvent { get; init; }
+        }
         private void CreateFractalSimpleInThread(object context)
         {
             var ctx =  context as FractalThreadContext;
@@ -164,6 +302,135 @@ namespace AlgebraicFractals
             ctx.DoneEvent.Set();
         }
 
+        private static void CreateMultiFractalSimpleInThread(object context)
+        {
+            var ctx = context as FractalMultiTreadContext;
+            var xScale = ctx.XScales;
+            var yScale = ctx.YScales;
+            var n = new int[ctx.Fractals.Length];
+            for (int y = ctx.ImageTL.Y; y < ctx.ImageBR.Y; y++)
+            {
+                for (int x = ctx.ImageTL.X; x < ctx.ImageBR.X; x++)
+                {
+                    for (int i = 0; i < ctx.Fractals.Length; i++)
+                    {
+                        n[i] = ctx.Fractals[i].FractalEquasion(x * xScale[i] + ctx.Fractals[i].TopLeft.X,
+                                                                    y * yScale[i] + ctx.Fractals[i].TopLeft.Y, ctx.MaxIter);
+                    }
+                    if (y + ctx.ImageWidth + x < ctx.Image.Length)
+                        ctx.Image[y * ctx.ImageWidth + x] = ColorINTFromIterationsAmount(n.Max());
+                }
+            }
+            ctx.DoneEvent.Set();
+        }
+
+        private void CreateFractalIntrinsicsInTread(object context)
+        {
+            var ctx = context as FractalThreadContext;
+            double yPos = ctx.FractalTL.Y;
+            int yOffset = 0;
+            var imageTL = ctx.ImageTL;
+            var imageBR = ctx.ImageBR;
+            var fractalTL = ctx.FractalTL;
+            var fractalBR = ctx.FractalBR;
+            var image = ctx.Image;
+            var imageWidth = ctx.ImageWidth;
+            double xScale = (fractalBR.X - fractalTL.X) / (imageBR.X - imageTL.X);
+            double yScale = (fractalBR.Y - fractalTL.Y) / (imageBR.Y - imageTL.Y);
+            int x, y;
+            Vector256<double> _a, _b, _y_pos;
+            Vector256<double> _x_pos_offsets, _x_pos, _x_scale, _x_jump;
+            Vector256<long> _n, _iterations;
+
+            _iterations = Vector256.Create((long)ctx.MaxIter);
+            _x_scale = Vector256.Create(xScale);
+            _x_jump = Vector256.Create(xScale * 4);
+            _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
+            _x_pos_offsets = Avx2.Multiply(_x_pos_offsets, _x_scale);
+
+            for (y = imageTL.Y; y < imageBR.Y; y++)
+            {
+                _a = Vector256.Create(fractalTL.X);
+                _x_pos = Avx2.Add(_a, _x_pos_offsets);
+                _y_pos = Vector256.Create(yPos);
+               
+                    for (x = imageTL.X; x < imageBR.X; x += 4)
+                    {
+                        _n = FractalInstrictEquasion(_x_pos, _y_pos, _iterations);
+                        lock (ctx.Image)
+                        {
+                            for (int i = 0; i < 4; i++)
+                            {
+                                if (yOffset + x + i < image.Length)
+                                    image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[i]));
+                            }
+                        }
+                    _x_pos = Avx2.Add(_x_pos, _x_jump);
+                    }
+                
+                yPos += yScale;
+                yOffset += imageWidth;
+            }
+            ctx.DoneEvent.Set();
+        }
+
+        private static void CreateMultiFractalIntrinsicsInTread(object context)
+        {
+            
+            var ctx = context as FractalIntrinsincsMultiTreadContext;
+            var yPos = ctx.FractalsTL.Select(pos => pos.Y).ToArray();
+            int yOffset = 0;
+            var imageTL = ctx.ImageTL;
+            var imageBR = ctx.ImageBR;
+            var fractalTL = ctx.FractalsTL;
+            var fractalBR = ctx.FractalsBR;
+            var image = ctx.Image;
+            var imageWidth = ctx.ImageWidth;
+            var xScale = new double[fractalBR.Length];
+            var yScale = new double[fractalBR.Length];
+            for (var i = 0; i < fractalBR.Length; i++)
+            {
+                xScale[i] = (fractalBR[i].X - fractalTL[i].X) / (imageBR.X - imageTL.X);
+                yScale[i] = (fractalBR[i].Y - fractalTL[i].Y) / (imageBR.Y - imageTL.Y);
+            }
+            int x, y;
+            Vector256<double> _x_pos_offsets;
+            Vector256<long> _n, _iterations;
+            Vector256<double>[] _a, _x_pos, _y_pos;
+           _iterations = Vector256.Create((long)ctx.MaxIter);
+            var _x_scale = xScale.Select(x => Vector256.Create(x)).ToArray();
+            var _x_jump = xScale.Select(x => Vector256.Create(x * 4)).ToArray();
+            _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
+            var _x_pos_offsetsArr = _x_scale.Select(scale => Avx2.Multiply(_x_pos_offsets, scale)).ToArray();
+            _x_pos = new Vector256<double>[_x_pos_offsetsArr.Length];
+            Vector256<long>[] n = new Vector256<long>[ctx.Fractals.Length];
+            for (y = imageTL.Y; y < imageBR.Y; y++)
+            {
+                _a = fractalTL.Select(tl => Vector256.Create(tl.X)).ToArray();
+                for(int j =0; j < _x_pos.Length;j++)
+                {
+                    _x_pos[j] = Avx2.Add(_a[j], _x_pos_offsetsArr[j]);
+                }
+                _y_pos = yPos.Select( pos => Vector256.Create(pos)).ToArray();
+
+                for (x = imageTL.X; x < imageBR.X; x += 4)
+                {
+                    for (int i = 0; i < _x_pos.Length; i++) n[i] = ctx.Fractals[i].FractalInstrictEquasion(_x_pos[i], _y_pos[i], _iterations);
+                    lock (ctx.Image)
+                    {
+                        for (int i = 0; i < 4; i++)
+                        {
+                            if (yOffset + x + i < image.Length)
+                                image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(n.Select(_n => _n.AsInt64()[i]).Max()));
+                        }
+                    }
+                    for (int i = 0; i < _x_pos.Length; i++) _x_pos[i] = Avx2.Add(_x_pos[i], _x_jump[i]);
+                }
+                for (int j = 0; j < yPos.Length; j++) yPos[j] += yScale[j];
+                yOffset += imageWidth;
+            }
+            ctx.DoneEvent.Set();
+        }
         public void CreateFractalSimpleInThreadPool(int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
@@ -193,61 +460,15 @@ namespace AlgebraicFractals
             foreach (var e in dones)
                 e.WaitOne();
         }
-
-        protected void CreateFractalIntrinsicsInTread(object context)
-        {
-            var ctx = context as FractalThreadContext;
-            double yPos = ctx.FractalTL.Y;
-            int yOffset = 0;
-            var imageTL = ctx.ImageTL;
-            var imageBR = ctx.ImageBR;
-            var fractalTL = ctx.FractalTL;
-            var fractalBR = ctx.FractalBR;
-            var image = ctx.Image;
-            var imageWidth = ctx.ImageWidth;
-            double xScale = (fractalBR.X - fractalTL.X) / (imageBR.X - imageTL.X);
-            double yScale = (fractalBR.Y - fractalTL.Y) / (imageBR.Y - imageTL.Y);
-            int x, y;
-            Vector256<double> _a, _b, _y_pos;
-            Vector256<double> _x_pos_offsets, _x_pos, _x_scale, _x_jump;
-            Vector256<long> _n, _iterations;
-
-            _iterations = Vector256.Create((long)ctx.MaxIter);
-            _x_scale = Vector256.Create(xScale);
-            _x_jump = Vector256.Create(xScale * 4);
-            _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
-            _x_pos_offsets = Avx2.Multiply(_x_pos_offsets, _x_scale);
-
-            for (y = imageTL.Y; y < imageBR.Y; y++)
-            {
-                _a = Vector256.Create(fractalTL.X);
-                _x_pos = Avx2.Add(_a, _x_pos_offsets);
-                _y_pos = Vector256.Create(yPos);
-                
-                for (x = imageTL.X; x < imageBR.X; x += 4)
-                {
-                    _n = FractalInstrictEquasion(_x_pos, _y_pos, _iterations);
-                    if (yOffset + x < image.Length) image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
-                    if (yOffset + x + 1 < image.Length) image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
-                    if (yOffset + x + 2 < image.Length) image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
-                    if (yOffset + x + 3 < image.Length) image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
-                    _x_pos = Avx2.Add(_x_pos, _x_jump);
-                 }
-                 yPos += yScale;
-                 yOffset += imageWidth;
-            }
-            ctx.DoneEvent.Set();
-        }
-
-        public void CreateFractalIntrinsicsThreadPool(int[] image, int imageWidth,
-            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
+        public void CreateFractalIntrinsicsInThreadPool(int[] image, int imageWidth,
+          Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
             double dFractalWidth = (BottomRight.X - TopLeft.X) / (double)ThreadCount;
             double xScale = (BottomRight.X - TopLeft.X) / (double)(imageBottomRight.X - imageTopLeft.X);
             double yScale = (BottomRight.Y - TopLeft.Y) / (double)(imageBottomRight.Y - imageTopLeft.Y);
             ManualResetEvent[] dones = new ManualResetEvent[ThreadCount];
-          
+
             for (int i = 0; i < ThreadCount; i++)
             {
                 dones[i] = new ManualResetEvent(false);
@@ -265,6 +486,76 @@ namespace AlgebraicFractals
                        dones[i]);
                 ThreadPool.QueueUserWorkItem(CreateFractalIntrinsicsInTread, context);
             }
+            foreach (var e in dones)
+                e.WaitOne();
+        }
+        public static void CreateMultiFractalSimpleInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations, int ThreadCount)
+        {
+            int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
+            var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
+            ManualResetEvent[] dones = new ManualResetEvent[ThreadCount];
+            var xScales = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)(imageBottomRight.X - imageTopLeft.X)).ToArray();
+            var yScales = fractals.Select(fr => (fr.BottomRight.Y - fr.TopLeft.Y) / (double)(imageBottomRight.Y - imageTopLeft.Y)).ToArray();
+            for (int i = 0; i < ThreadCount; i++)
+            {
+                dones[i] = new ManualResetEvent(false);
+                var ImBr = i == ThreadCount - 1 ? imageBottomRight.X : imageTopLeft.X + nSectionWidth * (i + 1);
+                var context = new FractalMultiTreadContext(
+                           fractals,
+                           image,
+                           imageWidth,
+                           xScales,
+                           yScales,
+                           new Coord<int>(imageTopLeft.X + nSectionWidth * i, imageTopLeft.Y),
+                           new Coord<int>(ImBr, imageBottomRight.Y),
+                           MaxIterations,
+                           dones[i]);
+                    ThreadPool.QueueUserWorkItem(CreateMultiFractalSimpleInThread, context);
+                
+            }
+
+            foreach (var e in dones)
+                e.WaitOne();
+        }
+
+        public static void CreateMultiFractalIntrinsicsInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
+          Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations, int ThreadCount)
+        {
+            int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
+            var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
+            ManualResetEvent[] dones = new ManualResetEvent[ThreadCount];
+            
+            for (int i = 0; i < ThreadCount; i++)
+            {
+                dones[i] = new ManualResetEvent(false);
+                var ImBrX = i == ThreadCount - 1 ? imageBottomRight.X : imageTopLeft.X + nSectionWidth * (i + 1);
+                var ImTlX = imageTopLeft.X + nSectionWidth * i;
+                var fractalsTL = new Coord<double>[fractals.Length];
+                var fractalsBR = new Coord<double>[fractals.Length];
+                for (int j = 0; j < fractals.Length;j++ )
+                {
+                    
+                    var FrBrX = i == ThreadCount - 1 ? fractals[j].BottomRight.X : fractals[j].TopLeft.X + dFractalWidth[j] * (i + 1);
+                    var FrTlX = fractals[j].TopLeft.X + dFractalWidth[j] * i;
+                    fractalsTL[j] = new Coord<double>(FrTlX, fractals[j].TopLeft.Y);
+                    fractalsBR[j] = new Coord<double>(FrBrX, fractals[j].BottomRight.Y);
+                }
+               
+                var context = new FractalIntrinsincsMultiTreadContext(
+                           fractals,
+                           image,
+                           imageWidth,
+                           fractalsTL,
+                           fractalsBR,
+                           new Coord<int>(ImTlX, imageTopLeft.Y),
+                           new Coord<int>(ImBrX, imageBottomRight.Y),
+                           MaxIterations,
+                           dones[i]);
+                ThreadPool.QueueUserWorkItem(CreateMultiFractalIntrinsicsInTread, context);
+
+            }
+
             foreach (var e in dones)
                 e.WaitOne();
         }
