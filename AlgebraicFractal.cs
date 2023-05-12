@@ -10,6 +10,10 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace AlgebraicFractals
 {
+    public delegate void CreateFractal(int[] image, int imageWidth,
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
+    public delegate void CreateMultiFractal(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+           Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
     public abstract class AlgebraicFractal
     {
         protected Coord<double> _topLeft;
