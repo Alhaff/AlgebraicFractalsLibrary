@@ -12,7 +12,7 @@ namespace AlgebraicFractals
 {
     public delegate void CreateFractal(int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
-    public delegate void CreateMultiFractal(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+    public delegate void CreateMultiFractal(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
     public abstract class AlgebraicFractal
     {
@@ -88,7 +88,7 @@ namespace AlgebraicFractals
             }
         }
 
-        public static void CreateMultiFractalSimple(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+        public static void CreateMultiFractalSimple(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             if (algebraicFractals == null) return;
@@ -100,12 +100,12 @@ namespace AlgebraicFractals
                                       (fractal.BottomRight.Y - fractal.TopLeft.Y) /
                                       (imageBottomRight.Y - imageTopLeft.Y)
                                                ).ToArray();
-            var n = new int[algebraicFractals.Length];
+            var n = new int[algebraicFractals.Count];
             for (int y = imageTopLeft.Y; y < imageBottomRight.Y; y++)
             {
                 for (int x = imageTopLeft.X; x < imageBottomRight.X; x++)
                 {
-                    for(int i = 0; i < algebraicFractals.Length;i++)
+                    for(int i = 0; i < algebraicFractals.Count;i++)
                     {
                         n[i] = algebraicFractals[i].FractalEquasion(x * xScale[i] + algebraicFractals[i].TopLeft.X,
                                                                     y * yScale[i] + algebraicFractals[i].TopLeft.Y, MaxIterations);
@@ -161,7 +161,7 @@ namespace AlgebraicFractals
                 }
             
         }
-        public static void CreateMultiFractalIntrinsics(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
+        public static void CreateMultiFractalIntrinsics(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             if (algebraicFractals == null) return;
@@ -183,10 +183,10 @@ namespace AlgebraicFractals
             var _x_jump = xScale.Select(x => Vector256.Create(x * 4)).ToArray();
             _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
             var _x_pos_offsetsArr = _x_scale.Select(x => Avx2.Multiply(_x_pos_offsets, x)).ToArray();
-            var n = new Vector256<long>[algebraicFractals.Length];
+            var n = new Vector256<long>[algebraicFractals.Count];
             var _a = algebraicFractals.Select(f => Vector256.Create(f.TopLeft.X)).ToArray();
-            var _x_pos = new Vector256<double>[algebraicFractals.Length];
-            var _y_pos = new Vector256<double>[algebraicFractals.Length];
+            var _x_pos = new Vector256<double>[algebraicFractals.Count];
+            var _y_pos = new Vector256<double>[algebraicFractals.Count];
             for (y = imageTopLeft.Y; y < imageBottomRight.Y; y++)
             {
                 for(int i =0; i < _x_pos.Length; i++) _x_pos[i] = Avx2.Add(_a[i], _x_pos_offsetsArr[i]); 
@@ -242,7 +242,7 @@ namespace AlgebraicFractals
         }
         public class FractalMultiTreadContext
         {
-            public AlgebraicFractal[] Fractals { get; init; }
+            public List<AlgebraicFractal> Fractals { get; init; }
             public int[] Image { get; init; }
             public int ImageWidth { get; init; }
             public double[] XScales { get; init; }
@@ -252,7 +252,7 @@ namespace AlgebraicFractals
             public int MaxIter { get; init; }
             public ManualResetEvent DoneEvent { get; init; }
             public FractalMultiTreadContext(
-                AlgebraicFractal[] fractals,
+                List<AlgebraicFractal> fractals,
                 int[] image,
                 int imageWidth,
                 double[] xScales,
@@ -277,7 +277,7 @@ namespace AlgebraicFractals
         public class FractalIntrinsincsMultiTreadContext
         {
             public FractalIntrinsincsMultiTreadContext(
-                AlgebraicFractal[] fractals,
+                List<AlgebraicFractal> fractals,
                 int[] image,
                 int imageWidth,
                 Coord<double>[] fractalsTL,
@@ -298,7 +298,7 @@ namespace AlgebraicFractals
                 DoneEvent = doneEvent;
             }
 
-            public AlgebraicFractal[] Fractals { get; init; }
+            public List<AlgebraicFractal> Fractals { get; init; }
             public int[] Image { get; init; }
             public int ImageWidth { get; init; }
             public Coord<double>[] FractalsTL { get; init; }
@@ -337,12 +337,12 @@ namespace AlgebraicFractals
             var ctx = context as FractalMultiTreadContext;
             var xScale = ctx.XScales;
             var yScale = ctx.YScales;
-            var n = new int[ctx.Fractals.Length];
+            var n = new int[ctx.Fractals.Count];
             for (int y = ctx.ImageTL.Y; y < ctx.ImageBR.Y; y++)
             {
                 for (int x = ctx.ImageTL.X; x < ctx.ImageBR.X; x++)
                 {
-                    for (int i = 0; i < ctx.Fractals.Length; i++)
+                    for (int i = 0; i < ctx.Fractals.Count; i++)
                     {
                         n[i] = ctx.Fractals[i].FractalEquasion(x * xScale[i] + ctx.Fractals[i].TopLeft.X,
                                                                     y * yScale[i] + ctx.Fractals[i].TopLeft.Y, ctx.MaxIter);
@@ -433,7 +433,7 @@ namespace AlgebraicFractals
             _x_pos_offsets = Vector256.Create(0d, 1d, 2d, 3d);
             var _x_pos_offsetsArr = _x_scale.Select(scale => Avx2.Multiply(_x_pos_offsets, scale)).ToArray();
             _x_pos = new Vector256<double>[_x_pos_offsetsArr.Length];
-            Vector256<long>[] n = new Vector256<long>[ctx.Fractals.Length];
+            Vector256<long>[] n = new Vector256<long>[ctx.Fractals.Count];
             for (y = imageTL.Y; y < imageBR.Y; y++)
             {
                 _a = fractalTL.Select(tl => Vector256.Create(tl.X)).ToArray();
@@ -519,7 +519,7 @@ namespace AlgebraicFractals
             foreach (var e in dones)
                 e.WaitOne();
         }
-        public static void CreateMultiFractalSimpleInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
+        public static void CreateMultiFractalSimpleInThreadPool(List<AlgebraicFractal> fractals, int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             if (fractals == null) return;
@@ -551,7 +551,7 @@ namespace AlgebraicFractals
                 e.WaitOne();
         }
 
-        public static void CreateMultiFractalIntrinsicsInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
+        public static void CreateMultiFractalIntrinsicsInThreadPool(List<AlgebraicFractal> fractals, int[] image, int imageWidth,
           Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
             if (fractals == null) return;
@@ -565,9 +565,9 @@ namespace AlgebraicFractals
                 dones[i] = new ManualResetEvent(false);
                 var ImBrX = i == ThreadCount - 1 ? imageBottomRight.X : imageTopLeft.X + nSectionWidth * (i + 1);
                 var ImTlX = imageTopLeft.X + nSectionWidth * i;
-                var fractalsTL = new Coord<double>[fractals.Length];
-                var fractalsBR = new Coord<double>[fractals.Length];
-                for (int j = 0; j < fractals.Length;j++ )
+                var fractalsTL = new Coord<double>[fractals.Count];
+                var fractalsBR = new Coord<double>[fractals.Count];
+                for (int j = 0; j < fractals.Count;j++ )
                 {
                     
                     var FrBrX = i == ThreadCount - 1 ? fractals[j].BottomRight.X : fractals[j].TopLeft.X + dFractalWidth[j] * (i + 1);
