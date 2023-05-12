@@ -12,9 +12,33 @@ namespace AlgebraicFractals
 {
     public abstract class AlgebraicFractal
     {
-        public Coord<double> TopLeft { get; set; }
+        protected Coord<double> _topLeft;
+        public Coord<double> TopLeft 
+        { 
+            get => _topLeft; 
+            set
+            {
+                _topLeft = value + _center;
+            }
+        }
 
-        public Coord<double> BottomRight { get; set; }
+        protected Coord<double> _bottomRight;
+        public Coord<double> BottomRight 
+        {
+            get => _bottomRight;
+            set
+            {
+                _bottomRight = value + _center;
+            }
+        }
+
+        protected Coord<double> _center = new Coord<double>(0,0);
+
+        public Coord<double> Center
+        {
+            get { return _center; }
+            set { _center = value; }
+        }
 
         public AlgebraicFractal(Coord<double> topLeftCoord, Coord<double> bottomRightCoord)
         {
