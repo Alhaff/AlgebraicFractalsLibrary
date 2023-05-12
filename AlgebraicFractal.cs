@@ -87,6 +87,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalSimple(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
+            if (algebraicFractals == null) return;
             var xScale = algebraicFractals.Select(fractal => 
                                         (fractal.BottomRight.X - fractal.TopLeft.X) / 
                                         (imageBottomRight.X - imageTopLeft.X)
@@ -159,6 +160,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalIntrinsics(AlgebraicFractal[] algebraicFractals, int[] image, int imageWidth,
            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
+            if (algebraicFractals == null) return;
             var xScale = algebraicFractals.Select(fractal =>
                                        (fractal.BottomRight.X - fractal.TopLeft.X) /
                                         (imageBottomRight.X - imageTopLeft.X)
@@ -514,8 +516,10 @@ namespace AlgebraicFractals
                 e.WaitOne();
         }
         public static void CreateMultiFractalSimpleInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
-            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations, int ThreadCount)
+            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
+            if (fractals == null) return;
+            int ThreadCount = fractals.Select(fr => fr.ThreadCount).Max();
             int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
             var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
             ManualResetEvent[] dones = new ManualResetEvent[ThreadCount];
@@ -544,8 +548,10 @@ namespace AlgebraicFractals
         }
 
         public static void CreateMultiFractalIntrinsicsInThreadPool(AlgebraicFractal[] fractals, int[] image, int imageWidth,
-          Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations, int ThreadCount)
+          Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
+            if (fractals == null) return;
+            int ThreadCount = fractals.Select(fr => fr.ThreadCount).Max();
             int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
             var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
             ManualResetEvent[] dones = new ManualResetEvent[ThreadCount];
