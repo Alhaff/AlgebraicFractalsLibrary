@@ -23,6 +23,7 @@ namespace AlgebraicFractals.Fractals
         public MandelbrotSetNPow(int pow) : base(new Coord<double>(-2, -1), new Coord<double>(1, 1))
         {
             Power = pow;
+            Caption = "Фрактал Мандельброта N cтупіння";
         }
 
         public override int FractalEquasion(double x, double y, double MaxIterations)

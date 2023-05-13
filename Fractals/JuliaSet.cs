@@ -11,14 +11,17 @@ namespace AlgebraicFractals.Fractals
 {
     public class JuliaSet : AlgebraicFractal
     {
+        public Coord<double> CPos { get; set; }
         public JuliaSet()
             : base(new Coord<double>(-2, -1.5), new Coord<double>(1, 1.5))
         {
+            CPos = new Coord<double>(0.36, 0.36);
+            Caption = "Фрактал Жуліа";
         }
 
         public override int FractalEquasion(double x, double y, double MaxIterations)
         {
-            Complex C = new Complex(0.36, 0.36);
+            Complex C = new Complex(CPos.X, CPos.Y);
             Complex Z = new Complex(x, y);
             int n = 0;
             while (Z.Magnitude < 2.0 && n < MaxIterations)
@@ -31,8 +34,8 @@ namespace AlgebraicFractals.Fractals
 
         public override Vector256<long> FractalInstrictEquasion(Vector256<double> x_pos, Vector256<double> y_pos, Vector256<long> maxIter)
         {
-            var _cr = Vector256.Create(0.36d);
-            var _ci = Vector256.Create(0.36d);
+            var _cr = Vector256.Create(CPos.X);
+            var _ci = Vector256.Create(CPos.Y);
             var _zr = x_pos;
             var _zi = y_pos;
             var _n = Vector256.Create(0l);

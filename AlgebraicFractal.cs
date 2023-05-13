@@ -14,6 +14,7 @@ namespace AlgebraicFractals
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
     public delegate void CreateMultiFractal(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations);
+   
     public abstract class AlgebraicFractal
     {
         protected Coord<double> _topLeft;
@@ -25,6 +26,7 @@ namespace AlgebraicFractals
                 _topLeft = value + _center;
             }
         }
+        public string Caption { get; init; } = "Фрактал";
 
         protected Coord<double> _bottomRight;
         public Coord<double> BottomRight 
@@ -447,14 +449,13 @@ namespace AlgebraicFractals
                 for (x = imageTL.X; x < imageBR.X; x += 4)
                 {
                     for (int i = 0; i < _x_pos.Length; i++) n[i] = ctx.Fractals[i].FractalInstrictEquasion(_x_pos[i], _y_pos[i], _iterations);
-                    lock (ctx.Image)
-                    {
+                    
                         for (int i = 0; i < 4; i++)
                         {
                             if (yOffset + x + i < image.Length)
                                 image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(n.Select(_n => _n.AsInt64()[i]).Max()));
                         }
-                    }
+                    
                     for (int i = 0; i < _x_pos.Length; i++) _x_pos[i] = Avx2.Add(_x_pos[i], _x_jump[i]);
                 }
                 for (int j = 0; j < yPos.Length; j++) yPos[j] += yScale[j];

@@ -13,6 +13,7 @@ namespace AlgebraicFractals.Fractals
     {
         public MandelbrotSet() : base(new Coord<double>(-2, -1), new Coord<double>(1, 1))
         {
+            Caption = "Фрактал Мандельброта";
         }
         public override int FractalEquasion(double x, double y, double MaxIterations)
         {

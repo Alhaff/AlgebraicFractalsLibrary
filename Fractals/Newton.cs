@@ -15,6 +15,7 @@ namespace AlgebraicFractals.Fractals
         public Newton(double eps = 0.00001) : base(new Coord<double>(-1,-1), new Coord<double>(1,1))
         {
             Eps = eps;
+            Caption = "Фрактал Ньютона";
         }
 
         public override int FractalEquasion(double x, double y, double MaxIterations)
