@@ -23,7 +23,7 @@ namespace AlgebraicFractals
             get => _topLeft; 
             set
             {
-                _topLeft = value + _center;
+                _topLeft = value - _center;
             }
         }
         public string Caption { get; init; } = "Фрактал";
@@ -34,7 +34,7 @@ namespace AlgebraicFractals
             get => _bottomRight;
             set
             {
-                _bottomRight = value + _center;
+                _bottomRight = value - _center;
             }
         }
 
