@@ -20,7 +20,7 @@ namespace AlgebraicFractals.Fractals
                 if (value > 0) _power = value;
             }
         }
-        public MandelbrotSetNPow(int pow) : base(new Coord<double>(-2, -1), new Coord<double>(1, 1))
+        public MandelbrotSetNPow(int pow = 3) : base(new Coord<double>(-2, -1), new Coord<double>(1, 1))
         {
             Power = pow;
             Caption = "Фрактал Мандельброта N cтупіння";
