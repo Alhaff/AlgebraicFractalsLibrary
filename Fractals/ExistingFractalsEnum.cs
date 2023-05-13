@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 
 namespace AlgebraicFractals.Fractals
 {
-   public enum ExistingFractals
-   {
+    /// <summary>
+    /// Enum of fractals which have already ahd a realization.
+    /// Name must be the same as class
+    /// </summary>
+    public enum ExistingFractals
+    {
         MandelbrotSet,
         MandelbrotSetNPow,
         JuliaSet,
         Newton,
-   }
+    }
 }
