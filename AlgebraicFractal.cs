@@ -83,7 +83,7 @@ namespace AlgebraicFractals
                 for (int x = imageTopLeft.X; x < imageBottomRight.X; x++)
                 {
                     image[y * imageWidth + x] = ColorINTFromIterationsAmount(
-                        FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations));
+                        FractalEquasion(x * xScale + TopLeft.X, y * yScale + TopLeft.Y, MaxIterations),Alpha);
                 }
             }
         }
@@ -91,7 +91,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalSimple(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
-            if (algebraicFractals == null) return;
+            if (algebraicFractals == null || algebraicFractals.Count == 0) return;
             var xScale = algebraicFractals.Select(fractal => 
                                         (fractal.BottomRight.X - fractal.TopLeft.X) / 
                                         (imageBottomRight.X - imageTopLeft.X)
@@ -150,10 +150,11 @@ namespace AlgebraicFractals
                     for (x = imageTopLeft.X; x < imageBottomRight.X; x += 4)
                     {
                         _n = FractalInstrictEquasion(_x_pos, _y_pos, _iterations);
-                        if (yOffset + x < image.Length) image[yOffset + x + 0] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[0]));
-                        if (yOffset + x + 1 < image.Length) image[yOffset + x + 1] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[1]));
-                        if (yOffset + x + 2 < image.Length) image[yOffset + x + 2] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[2]));
-                        if (yOffset + x + 3 < image.Length) image[yOffset + x + 3] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[3]));
+                        for(int i = 0; i < 4; i++)
+                        {
+                            if (yOffset + x +i < image.Length)
+                            image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[i]),Alpha);
+                        }
                         _x_pos = Avx2.Add(_x_pos, _x_jump);
                     }
                     yPos += yScale;
@@ -164,7 +165,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalIntrinsics(List<AlgebraicFractal> algebraicFractals, int[] image, int imageWidth,
            Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
-            if (algebraicFractals == null) return;
+            if (algebraicFractals == null || algebraicFractals.Count == 0) return;
             var xScale = algebraicFractals.Select(fractal =>
                                        (fractal.BottomRight.X - fractal.TopLeft.X) /
                                         (imageBottomRight.X - imageTopLeft.X)
@@ -210,7 +211,7 @@ namespace AlgebraicFractals
         #region ThreadWork
 
         public int ThreadCount { get; set; } = 32;
-        public class FractalThreadContext
+        protected class FractalThreadContext
         {
             public FractalThreadContext(int[] image, int imageWidth,
                 Coord<double> fractalTL, Coord<double> fractalBR,
@@ -240,7 +241,7 @@ namespace AlgebraicFractals
             public int MaxIter { get; init; }
             public ManualResetEvent DoneEvent { get; init; }
         }
-        public class FractalMultiTreadContext
+        protected class FractalMultiTreadContext
         {
             public List<AlgebraicFractal> Fractals { get; init; }
             public int[] Image { get; init; }
@@ -274,7 +275,7 @@ namespace AlgebraicFractals
             }
         }
 
-        public class FractalIntrinsincsMultiTreadContext
+        protected class FractalIntrinsincsMultiTreadContext
         {
             public FractalIntrinsincsMultiTreadContext(
                 List<AlgebraicFractal> fractals,
@@ -326,7 +327,7 @@ namespace AlgebraicFractals
                 {
                     if(y + imageWidth + x < image.Length)
                         image[y * imageWidth + x] = ColorINTFromIterationsAmount(
-                        FractalEquasion((x * xScale) + TopLeft.X, (y*yScale) + TopLeft.Y, MaxIterations));
+                        FractalEquasion((x * xScale) + TopLeft.X, (y*yScale) + TopLeft.Y, MaxIterations), Alpha);
                 }
             }
             ctx.DoneEvent.Set();
@@ -392,7 +393,7 @@ namespace AlgebraicFractals
                             for (int i = 0; i < 4; i++)
                             {
                                 if (yOffset + x + i < image.Length)
-                                    image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[i]));
+                                    image[yOffset + x + i] = ColorINTFromIterationsAmount((int)(_n.AsInt64()[i]), Alpha);
                             }
                         }
                     _x_pos = Avx2.Add(_x_pos, _x_jump);
@@ -522,7 +523,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalSimpleInThreadPool(List<AlgebraicFractal> fractals, int[] image, int imageWidth,
             Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
-            if (fractals == null) return;
+            if (fractals == null || fractals.Count == 0) return;
             int ThreadCount = fractals.Select(fr => fr.ThreadCount).Max();
             int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
             var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
@@ -554,7 +555,7 @@ namespace AlgebraicFractals
         public static void CreateMultiFractalIntrinsicsInThreadPool(List<AlgebraicFractal> fractals, int[] image, int imageWidth,
           Coord<int> imageTopLeft, Coord<int> imageBottomRight, int MaxIterations)
         {
-            if (fractals == null) return;
+            if (fractals == null || fractals.Count == 0) return;
             int ThreadCount = fractals.Select(fr => fr.ThreadCount).Max();
             int nSectionWidth = (int)((imageBottomRight.X - imageTopLeft.X) / (double)ThreadCount);
             var dFractalWidth = fractals.Select(fr => (fr.BottomRight.X - fr.TopLeft.X) / (double)ThreadCount).ToArray();
@@ -596,6 +597,7 @@ namespace AlgebraicFractals
         #endregion
 
         #region Color
+        public double Alpha { get; set; } = 0.1;
         public static int ColorINTFromIterationsAmount(double n, double alpha = 0.1d)
         {
             double red = 0.5d * Math.Sin(alpha * n) + 0.5d;
