@@ -8,6 +8,13 @@ namespace AlgebraicFractals.Fractals
 {
     public static class FractalFactory
     {
+        /// <summary>
+        /// Create instance of AlgebraicFractal from enum parametr
+        /// </summary>
+        /// <param name="existingFractals">Enum parametr of fractal</param>
+        /// <param name="arguments"> fractal constructor arguments</param>
+        /// <returns>Instance of Algebraic fractal object</returns>
+        /// <exception cref="TypeUnloadedException" >Thrown if cannot find fractal type</exception>
         public static AlgebraicFractal CreateFractal(ExistingFractals existingFractals, params object?[]? arguments)
         {
             var str = "AlgebraicFractals.Fractals." + existingFractals.ToString();
