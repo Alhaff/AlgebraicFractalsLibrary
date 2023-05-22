@@ -24,7 +24,7 @@ namespace AlgebraicFractals.Fractals
             Complex C = new Complex(CPos.X, CPos.Y);
             Complex Z = new Complex(x, y);
             int n = 0;
-            while (Z.Magnitude < 2.0 && n < MaxIterations)
+            while (Z.Magnitude <= 2.0 && n < MaxIterations)
             {
                 Z = Z * Z + C;
                 n++;
@@ -52,7 +52,7 @@ namespace AlgebraicFractals.Fractals
                 _a = Avx.Add(_zr2, _zi2);
                 (_zr, _zi) = IntrinsicsComplexMath.Multiply((_zr, _zi), (_zr, _zi));
                 (_zr, _zi) = IntrinsicsComplexMath.Add((_zr, _zi), (_cr, _ci));
-                _mask1 = Avx.CompareLessThan(_a, FOUR);
+                _mask1 = Avx.CompareLessThanOrEqual(_a, FOUR);
                 _mask2 = Avx2.CompareGreaterThan(maxIter, _n);
                 _mask2 = Avx2.And(_mask2, _mask1.AsInt64());
                 _c = Avx2.And(ONE, _mask2); // Zero out ones where n < iterations													
