@@ -26,7 +26,7 @@ namespace AlgebraicFractals
                 _topLeft = value - _center;
             }
         }
-        public string Caption { get; init; } = "Фрактал";
+        public string Caption { get; set; } = "Фрактал";
 
         protected Coord<double> _bottomRight;
         public Coord<double> BottomRight 
